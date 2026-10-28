@@ -1,0 +1,50 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.egg
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# Tests / coverage
+.pytest_cache/
+.coverage
+htmlcov/
+*.log
+
+# Environnements virtuels
+.venv/
+venv/
+env/
+.env
+
+# Clés et secrets — NE JAMAIS COMMITTER
+*.pem
+*.key
+*.p12
+*.pfx
+*.der
+*.crt
+*.cer
+keystore.json
+*_priv.json
+*_private*.json
+secrets.json
+.env.*
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Rapport (PDF généré, pas les sources)
+report/*.pdf

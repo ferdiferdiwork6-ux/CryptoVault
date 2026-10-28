@@ -1,0 +1,82 @@
+import hashlib
+
+
+def calculer_empreintes(chemin):
+    """Calcule les empreintes d'un fichier avec quatre algorithmes."""
+
+    algorithmes = {
+        "MD5": hashlib.md5(),
+        "SHA-1": hashlib.sha1(),
+        "SHA-256": hashlib.sha256(),
+        "SHA3-256": hashlib.sha3_256(),
+    }
+
+    with open(chemin, "rb") as fichier:
+        for bloc in iter(lambda: fichier.read(4096), b""):
+            for empreinte in algorithmes.values():
+                empreinte.update(bloc)
+
+    return {
+        nom: empreinte.hexdigest()
+        for nom, empreinte in algorithmes.items()
+    }
+
+
+def verifier_empreinte(
+    chemin,
+    empreinte_attendue,
+    algorithme="sha256"
+):
+    """Vérifie si un fichier correspond à une empreinte attendue."""
+
+    empreintes = calculer_empreintes(chemin)
+
+    noms_algorithmes = {
+        "md5": "MD5",
+        "sha1": "SHA-1",
+        "sha-1": "SHA-1",
+        "sha256": "SHA-256",
+        "sha-256": "SHA-256",
+        "sha3-256": "SHA3-256",
+        "sha3_256": "SHA3-256",
+    }
+
+    nom = noms_algorithmes.get(algorithme.lower())
+
+    if nom is None:
+        raise ValueError("Algorithme non pris en charge.")
+
+    empreinte_calculee = empreintes[nom]
+
+    return empreinte_calculee.lower() == empreinte_attendue.lower()
+
+
+if __name__ == "__main__":
+    chemin = "test.txt"
+
+    try:
+        empreintes = calculer_empreintes(chemin)
+
+        print("Fichier :", chemin)
+        print("-" * 50)
+
+        for algorithme, empreinte in empreintes.items():
+            print(f"{algorithme} : {empreinte}")
+
+        print("-" * 50)
+
+        empreinte_attendue = empreintes["SHA-256"]
+
+        resultat = verifier_empreinte(
+            chemin,
+            empreinte_attendue,
+            "sha256"
+        )
+
+        print("Fichier authentique :", resultat)
+
+    except FileNotFoundError:
+        print("Erreur : le fichier", chemin, "n'existe pas.")
+
+    except ValueError as erreur:
+        print("Erreur :", erreur)

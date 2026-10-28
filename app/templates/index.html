@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CryptoVault — Interface pédagogique</title>
+<style>
+  :root {
+    --bleu:   #1f497d;
+    --vert:   #217a3c;
+    --rouge:  #a61c2a;
+    --gris:   #f4f6f9;
+    --bord:   #dde2ea;
+    --code:   #2b2b2b;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', Arial, sans-serif; background: var(--gris); color: #222; }
+
+  header {
+    background: var(--bleu); color: #fff; padding: 18px 32px;
+    display: flex; align-items: center; gap: 16px;
+  }
+  header h1 { font-size: 1.6rem; font-weight: 700; }
+  header span { font-size: 0.9rem; opacity: .75; }
+
+  nav {
+    background: #fff; border-bottom: 2px solid var(--bord);
+    display: flex; flex-wrap: wrap; gap: 4px; padding: 8px 16px;
+  }
+  nav button {
+    background: none; border: 1px solid var(--bord); border-radius: 20px;
+    padding: 6px 16px; cursor: pointer; font-size: .85rem; color: var(--bleu);
+    transition: all .15s;
+  }
+  nav button:hover, nav button.active {
+    background: var(--bleu); color: #fff; border-color: var(--bleu);
+  }
+
+  main { display: flex; gap: 0; min-height: calc(100vh - 120px); }
+
+  .panels { flex: 1; padding: 24px 28px; }
+  .panel  { display: none; }
+  .panel.active { display: block; }
+
+  h2 { color: var(--bleu); font-size: 1.2rem; margin-bottom: 16px;
+       border-left: 4px solid var(--bleu); padding-left: 10px; }
+  h3 { color: #444; font-size: 1rem; margin: 20px 0 8px; }
+
+  .card {
+    background: #fff; border: 1px solid var(--bord); border-radius: 8px;
+    padding: 18px 20px; margin-bottom: 16px;
+  }
+  .card-title { font-weight: 600; color: var(--bleu); margin-bottom: 10px; }
+
+  .row { display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap; margin-bottom: 10px; }
+  label { font-size: .85rem; color: #555; display: block; margin-bottom: 3px; }
+  input[type=text], input[type=number], textarea {
+    border: 1px solid var(--bord); border-radius: 6px; padding: 7px 10px;
+    font-size: .9rem; width: 100%; background: var(--gris);
+  }
+  textarea { height: 70px; resize: vertical; }
+  .field { flex: 1; min-width: 120px; }
+
+  button.btn {
+    background: var(--bleu); color: #fff; border: none; border-radius: 6px;
+    padding: 8px 20px; cursor: pointer; font-size: .9rem; white-space: nowrap;
+    transition: background .15s;
+  }
+  button.btn:hover { background: #163a66; }
+  button.btn.green { background: var(--vert); }
+  button.btn.green:hover { background: #185c2d; }
+  button.btn.red { background: var(--rouge); }
+
+  .result {
+    background: var(--code); color: #e8f0fe; border-radius: 6px;
+    padding: 12px 14px; font-family: 'Courier New', monospace; font-size: .82rem;
+    margin-top: 10px; white-space: pre-wrap; word-break: break-all;
+    max-height: 260px; overflow-y: auto; display: none;
+  }
+  .result.visible { display: block; }
+  .ok  { color: #7fff7f; }
+  .err { color: #ff8080; }
+
+  .badge {
+    display: inline-block; padding: 2px 10px; border-radius: 12px;
+    font-size: .78rem; font-weight: 600;
+  }
+  .badge.ok  { background: #d4edda; color: #155724; }
+  .badge.err { background: #f8d7da; color: #721c24; }
+  .badge.warn{ background: #fff3cd; color: #856404; }
+
+  table { width: 100%; border-collapse: collapse; font-size: .88rem; margin-top: 8px; }
+  th { background: var(--bleu); color: #fff; padding: 8px 10px; text-align: left; }
+  td { padding: 7px 10px; border-bottom: 1px solid var(--bord); }
+  tr:last-child td { border-bottom: none; }
+  tr:nth-child(even) { background: var(--gris); }
+
+  .spinner {
+    display: none; border: 3px solid var(--bord); border-top-color: var(--bleu);
+    border-radius: 50%; width: 20px; height: 20px; animation: spin .7s linear infinite;
+    margin: 8px 0;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>🔐 CryptoVault</h1>
+    <span>Interface pédagogique — Cours Cryptographie 20 h</span>
+  </div>
+</header>
+
+<nav id="nav">
+  <button class="active" onclick="show('hachage')">Module 1 — Hachage</button>
+  <button onclick="show('rsa')">Module 3 — RSA</button>
+  <button onclick="show('dh')">Module 4 — DH</button>
+  <button onclick="show('ecc')">Module 5 — ECC</button>
+  <button onclick="show('sym')">Module 6 — Symétrique</button>
+  <button onclick="show('prng')">Module 8 — PRNG</button>
+  <button onclick="show('messagerie')">Module 9 — Messagerie</button>
+  <button onclick="show('vault')">Module 9 — Coffre-fort</button>
+  <button onclick="show('shamir')">Bonus — Shamir</button>
+  <button onclick="show('mlkem')">Bonus — ML-KEM</button>
+</nav>
+
+<main>
+<div class="panels">
+
+<!-- ═══ MODULE 1 : HACHAGE ═══════════════════════════════════════════════ -->
+<div id="panel-hachage" class="panel active">
+  <h2>Module 1 — Fonctions de hachage</h2>
+
+  <div class="card">
+    <div class="card-title">Calculer l'empreinte d'un texte</div>
+    <div class="row">
+      <div class="field"><label>Texte</label><input type="text" id="h-texte" value="Bonjour CryptoVault"></div>
+      <button class="btn" onclick="apiCall('hachage/empreinte',{texte:v('h-texte')},'res-empreinte')">Calculer</button>
+    </div>
+    <div class="spinner" id="spin-empreinte"></div>
+    <div class="result" id="res-empreinte"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Effet avalanche — changer 1 bit change ~50% des bits de sortie</div>
+    <div class="row">
+      <div class="field"><label>Message</label><input type="text" id="h-aval" value="Hello World"></div>
+      <button class="btn" onclick="apiCall('hachage/avalanche',{texte:v('h-aval')},'res-avalanche')">Tester</button>
+    </div>
+    <div class="result" id="res-avalanche"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">HMAC-SHA256 (RFC 2104 — implémentation manuelle)</div>
+    <div class="row">
+      <div class="field"><label>Clé</label><input type="text" id="h-cle" value="cle_secrete"></div>
+      <div class="field"><label>Message</label><input type="text" id="h-msg" value="message test"></div>
+      <button class="btn" onclick="apiCall('hachage/hmac',{cle:v('h-cle'),message:v('h-msg')},'res-hmac')">Calculer</button>
+    </div>
+    <div class="result" id="res-hmac"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Stockage sécurisé de mot de passe (PBKDF2 + sel)</div>
+    <div class="row">
+      <div class="field"><label>Mot de passe</label><input type="text" id="h-mdp" value="MonMotDePasse123"></div>
+      <button class="btn" onclick="apiCall('hachage/mdp',{mdp:v('h-mdp')},'res-mdp')">Hacher</button>
+    </div>
+    <div class="result" id="res-mdp"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Attaque anniversaire — collision SHA-256 tronqué 32 bits</div>
+    <button class="btn red" onclick="apiCall('hachage/collision',{},'res-collision')">Lancer l'attaque (~2^16 essais)</button>
+    <div class="spinner" id="spin-collision"></div>
+    <div class="result" id="res-collision"></div>
+  </div>
+</div>
+
+<!-- ═══ MODULE 3 : RSA ═══════════════════════════════════════════════════ -->
+<div id="panel-rsa" class="panel">
+  <h2>Module 3 — RSA</h2>
+
+  <div class="card">
+    <div class="card-title">Générer une paire de clés RSA (512 bits, e=65537)</div>
+    <button class="btn" onclick="apiCall('rsa/generer',{},'res-rsa-gen')">Générer</button>
+    <div class="result" id="res-rsa-gen"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Chiffrement RSA-OAEP + déchiffrement CRT</div>
+    <div class="row">
+      <div class="field"><label>Message</label><input type="text" id="rsa-msg" value="Message secret RSA"></div>
+      <button class="btn" onclick="apiCall('rsa/chiffrer',{message:v('rsa-msg')},'res-rsa-enc')">Chiffrer / Déchiffrer</button>
+    </div>
+    <div class="result" id="res-rsa-enc"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Attaque — Malléabilité RSA textbook (sans padding)</div>
+    <div class="row">
+      <div class="field"><label>Message M (entier)</label><input type="number" id="rsa-m" value="42"></div>
+      <button class="btn red" onclick="apiCall('rsa/attaque_malleable',{message:v('rsa-m')},'res-rsa-mall')">Attaquer</button>
+    </div>
+    <div class="result" id="res-rsa-mall"></div>
+  </div>
+</div>
+
+<!-- ═══ MODULE 4 : DH ════════════════════════════════════════════════════ -->
+<div id="panel-dh" class="panel">
+  <h2>Module 4 — Diffie-Hellman</h2>
+
+  <div class="card">
+    <div class="card-title">Échange DH (p=23, g=5 — groupe démo)</div>
+    <button class="btn" onclick="apiCall('dh/echange',{},'res-dh')">Simuler l'échange</button>
+    <div class="result" id="res-dh"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Attaque MITM — Mallory intercepte l'échange non authentifié</div>
+    <button class="btn red" onclick="apiCall('dh/mitm',{},'res-dh-mitm')">Simuler MITM</button>
+    <div class="result" id="res-dh-mitm"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Attaque BSGS — Logarithme discret sur petit premier</div>
+    <div class="row">
+      <div class="field"><label>Taille du premier (bits)</label><input type="number" id="dh-bits" value="25" min="15" max="30"></div>
+      <button class="btn red" onclick="apiCall('dh/bsgs',{bits:v('dh-bits')},'res-dh-bsgs')">Casser</button>
+    </div>
+    <div class="result" id="res-dh-bsgs"></div>
+  </div>
+</div>
+
+<!-- ═══ MODULE 5 : ECC ═══════════════════════════════════════════════════ -->
+<div id="panel-ecc" class="panel">
+  <h2>Module 5 — Courbes elliptiques</h2>
+
+  <div class="card">
+    <div class="card-title">ECDH — Échange de clés sur P-256</div>
+    <button class="btn" onclick="apiCall('ecc/ecdh',{},'res-ecdh')">Simuler ECDH</button>
+    <div class="result" id="res-ecdh"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">ECDSA — Signature + vérification (RFC 6979)</div>
+    <div class="row">
+      <div class="field"><label>Message</label><input type="text" id="ecc-msg" value="Document important"></div>
+      <button class="btn" onclick="apiCall('ecc/ecdsa',{message:v('ecc-msg')},'res-ecdsa')">Signer / Vérifier</button>
+    </div>
+    <div class="result" id="res-ecdsa"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Attaque — Nonce ECDSA réutilisé → clé privée retrouvée</div>
+    <button class="btn red" onclick="apiCall('ecc/nonce_attack',{},'res-nonce')">Lancer l'attaque</button>
+    <div class="result" id="res-nonce"></div>
+  </div>
+</div>
+
+<!-- ═══ MODULE 6 : SYMÉTRIQUE ════════════════════════════════════════════ -->
+<div id="panel-sym" class="panel">
+  <h2>Module 6 — Cryptographie symétrique</h2>
+
+  <div class="card">
+    <div class="card-title">Chiffre de César + force brute</div>
+    <div class="row">
+      <div class="field"><label>Texte</label><input type="text" id="sym-texte" value="BONJOUR CRYPTOGRAPHIE"></div>
+      <div class="field" style="max-width:80px"><label>Décalage</label><input type="number" id="sym-d" value="7" min="1" max="25"></div>
+      <button class="btn" onclick="apiCall('sym/cesar',{texte:v('sym-texte'),decalage:v('sym-d')},'res-cesar')">Chiffrer + Casser</button>
+    </div>
+    <div class="result" id="res-cesar"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">AES-256-GCM — Chiffrement authentifié</div>
+    <div class="row">
+      <div class="field"><label>Message</label><input type="text" id="sym-aes" value="Message confidentiel AES-GCM"></div>
+      <button class="btn" onclick="apiCall('sym/aes_gcm',{message:v('sym-aes')},'res-aes')">Chiffrer</button>
+    </div>
+    <div class="result" id="res-aes"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Attaque — ECB : motif visible sur données répétées</div>
+    <button class="btn red" onclick="apiCall('sym/ecb_demo',{},'res-ecb')">Démontrer la faille ECB</button>
+    <div class="result" id="res-ecb"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Attaque — Bit-flipping sur CBC non authentifié</div>
+    <button class="btn red" onclick="apiCall('sym/bitflip',{},'res-bitflip')">Lancer le bit-flipping</button>
+    <div class="result" id="res-bitflip"></div>
+  </div>
+</div>
+
+<!-- ═══ MODULE 8 : PRNG ══════════════════════════════════════════════════ -->
+<div id="panel-prng" class="panel">
+  <h2>Module 8 — Générateurs pseudo-aléatoires</h2>
+
+  <div class="card">
+    <div class="card-title">Comparaison LCG / MT19937 / HMAC_DRBG (tests statistiques)</div>
+    <button class="btn" onclick="apiCall('prng/comparer',{},'res-prng-cmp', renderPRNGTable)">Comparer</button>
+    <div id="prng-table-container"></div>
+    <div class="result" id="res-prng-cmp" style="display:none"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Attaque — Cloner le Mersenne Twister (624 sorties)</div>
+    <button class="btn red" onclick="apiCall('prng/attaque_mt',{},'res-mt')">Cloner MT19937</button>
+    <div class="result" id="res-mt"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Attaque — Casser un LCG (retrouver a et c)</div>
+    <button class="btn red" onclick="apiCall('prng/attaque_lcg',{},'res-lcg')">Casser LCG</button>
+    <div class="result" id="res-lcg"></div>
+  </div>
+</div>
+
+<!-- ═══ MODULE 9 : MESSAGERIE ════════════════════════════════════════════ -->
+<div id="panel-messagerie" class="panel">
+  <h2>Module 9 — Messagerie sécurisée</h2>
+
+  <div class="card">
+    <div class="card-title">1. Inscription (PKI + PBKDF2)</div>
+    <div class="row">
+      <div class="field"><label>Nom d'utilisateur</label><input type="text" id="msg-user" value="alice"></div>
+      <div class="field"><label>Mot de passe</label><input type="text" id="msg-mdp" value="motdepasse123"></div>
+      <button class="btn green" onclick="apiCall('messagerie/inscrire',{username:v('msg-user'),mdp:v('msg-mdp')},'res-inscrire')">Inscrire</button>
+    </div>
+    <div class="result" id="res-inscrire"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">2. Handshake ECDHE (TLS simplifié)</div>
+    <div class="row">
+      <div class="field"><label>Nom d'utilisateur</label><input type="text" id="msg-user2" value="alice"></div>
+      <button class="btn" onclick="apiCall('messagerie/handshake',{username:v('msg-user2')},'res-handshake')">Effectuer le handshake</button>
+    </div>
+    <div class="result" id="res-handshake"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">3. Envoyer un message (AES-GCM + anti-rejeu)</div>
+    <div class="row">
+      <div class="field"><label>Utilisateur</label><input type="text" id="msg-user3" value="alice"></div>
+      <div class="field"><label>Message</label><input type="text" id="msg-contenu" value="Bonjour, message chiffré !"></div>
+      <button class="btn" onclick="apiCall('messagerie/envoyer',{username:v('msg-user3'),message:v('msg-contenu')},'res-msg')">Envoyer</button>
+    </div>
+    <div class="result" id="res-msg"></div>
+  </div>
+</div>
+
+<!-- ═══ MODULE 9 : COFFRE-FORT ═══════════════════════════════════════════ -->
+<div id="panel-vault" class="panel">
+  <h2>Module 9 — Coffre-fort de fichiers</h2>
+
+  <div class="card">
+    <div class="card-title">Ajouter un fichier (AES-GCM + RSA-OAEP + Merkle + ECDSA)</div>
+    <div class="row">
+      <div class="field"><label>Nom du fichier</label><input type="text" id="v-nom" value="rapport.pdf"></div>
+      <div class="field"><label>Utilisateur</label><input type="text" id="v-user" value="alice"></div>
+    </div>
+    <div class="row">
+      <div class="field"><label>Contenu</label><textarea id="v-contenu">Contenu confidentiel du rapport...</textarea></div>
+    </div>
+    <button class="btn green" onclick="apiCall('vault/add',{nom:v('v-nom'),username:v('v-user'),contenu:v('v-contenu')},'res-vault-add')">Chiffrer et stocker</button>
+    <div class="result" id="res-vault-add"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Lister les fichiers</div>
+    <button class="btn" onclick="api('vault/list','GET',null,'res-vault-list')">Lister</button>
+    <div class="result" id="res-vault-list"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Récupérer un fichier (déchiffrement + vérification Merkle)</div>
+    <div class="row">
+      <div class="field"><label>Nom du fichier</label><input type="text" id="v-get-nom" value="rapport.pdf"></div>
+      <div class="field"><label>Utilisateur</label><input type="text" id="v-get-user" value="alice"></div>
+      <button class="btn" onclick="apiCall('vault/get',{nom:v('v-get-nom'),username:v('v-get-user')},'res-vault-get')">Déchiffrer</button>
+    </div>
+    <div class="result" id="res-vault-get"></div>
+  </div>
+</div>
+
+<!-- ═══ BONUS : SHAMIR ═══════════════════════════════════════════════════ -->
+<div id="panel-shamir" class="panel">
+  <h2>Bonus — Partage de secret de Shamir (k parmi n)</h2>
+
+  <div class="card">
+    <div class="card-title">Partager la clé de l'AC racine entre n administrateurs (seuil k)</div>
+    <div class="row">
+      <div class="field" style="max-width:80px"><label>k (seuil)</label><input type="number" id="sh-k" value="3" min="2" max="10"></div>
+      <div class="field" style="max-width:80px"><label>n (total)</label><input type="number" id="sh-n" value="5" min="2" max="10"></div>
+      <button class="btn" onclick="apiCall('shamir/partager',{k:parseInt(v('sh-k')),n:parseInt(v('sh-n'))},'res-shamir')">Partager et reconstruire</button>
+    </div>
+    <div class="result" id="res-shamir"></div>
+  </div>
+</div>
+
+<!-- ═══ BONUS : ML-KEM ═══════════════════════════════════════════════════ -->
+<div id="panel-mlkem" class="panel">
+  <h2>Bonus — ML-KEM vs ECDH (Post-quantique, NIST 2024)</h2>
+
+  <div class="card">
+    <div class="card-title">Comparaison ECDH P-256 vs ML-KEM-768 (tailles + performance)</div>
+    <button class="btn" onclick="apiCall('mlkem/comparer',{},'res-mlkem-cmp', renderMLKEMTable)">Comparer</button>
+    <div id="mlkem-table-container"></div>
+    <div class="result" id="res-mlkem-cmp" style="display:none"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Échange hybride X25519 + ML-KEM-768 (protection maximale)</div>
+    <button class="btn green" onclick="apiCall('mlkem/hybride',{},'res-mlkem-hyb')">Simuler l'échange hybride</button>
+    <div class="result" id="res-mlkem-hyb"></div>
+  </div>
+</div>
+
+</div><!-- panels -->
+</main>
+
+<script>
+// ── Navigation ──────────────────────────────────────────────────────────────
+function show(id) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+  document.getElementById('panel-' + id).classList.add('active');
+  event.target.classList.add('active');
+}
+
+// ── Utilitaires ─────────────────────────────────────────────────────────────
+function v(id) { return document.getElementById(id).value; }
+
+function display(resId, data) {
+  const el = document.getElementById(resId);
+  el.classList.add('visible');
+  if (typeof data === 'object') {
+    el.innerHTML = formatJSON(data);
+  } else {
+    el.textContent = data;
+  }
+}
+
+function formatJSON(obj) {
+  return JSON.stringify(obj, null, 2)
+    .replace(/"succes": true|"roundtrip_ok": true|"secret_commun": true|"attaque_reussie": true|"mallory_a_lu": true/g,
+             m => m.replace('true','<span class="ok">true ✓</span>'))
+    .replace(/"succes": false|"roundtrip_ok": false|"alice_detecte": false/g,
+             m => m.replace('false','<span class="err">false</span>'));
+}
+
+// ── Appel API ────────────────────────────────────────────────────────────────
+function apiCall(endpoint, body, resId, callback) {
+  const spin = document.getElementById('spin-' + endpoint.split('/')[1]);
+  if (spin) spin.style.display = 'block';
+  fetch('/api/' + endpoint, {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify(body)
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (spin) spin.style.display = 'none';
+    if (callback) callback(data);
+    else display(resId, data);
+  })
+  .catch(err => {
+    if (spin) spin.style.display = 'none';
+    display(resId, 'Erreur : ' + err.message);
+  });
+}
+
+function api(endpoint, method, body, resId) {
+  fetch('/api/' + endpoint, { method, headers: {'Content-Type':'application/json'},
+    body: body ? JSON.stringify(body) : undefined })
+  .then(r => r.json()).then(d => display(resId, d));
+}
+
+// ── Renderers spéciaux ───────────────────────────────────────────────────────
+function renderPRNGTable(data) {
+  let html = '<table><tr><th>Générateur</th><th>Monobit</th><th>Chi²</th><th>Crypto-sûr</th></tr>';
+  const crypto_sur = {LCG: false, MT19937: false, HMAC_DRBG: true};
+  for (const [nom, stats] of Object.entries(data)) {
+    const b = v => v ? '<span class="badge ok">OK</span>' : '<span class="badge err">FAIL</span>';
+    const cs = crypto_sur[nom];
+    html += `<tr><td><b>${nom}</b></td><td>${b(stats.monobit)}</td><td>${b(stats.chi2)}</td>
+             <td>${cs ? '<span class="badge ok">Oui</span>' : '<span class="badge err">Non</span>'}</td></tr>`;
+  }
+  html += '</table>';
+  document.getElementById('prng-table-container').innerHTML = html;
+}
+
+function renderMLKEMTable(data) {
+  let html = '<table><tr><th>Algorithme</th><th>Sécurité</th><th>Résistant quantique</th>'
+           + '<th>Clé pub (octets)</th><th>Ciphertext (octets)</th><th>Temps (ms)</th></tr>';
+  for (const [nom, stats] of Object.entries(data)) {
+    const rq = stats.resistance_quantique
+      ? '<span class="badge ok">Oui</span>'
+      : '<span class="badge err">Non</span>';
+    html += `<tr><td><b>${nom}</b></td><td>${stats.securite_bits} bits</td><td>${rq}</td>
+             <td>${stats.taille_cle_pub_octets}</td><td>${stats.taille_ciphertext_octets}</td>
+             <td>${stats.temps_echange_ms}</td></tr>`;
+  }
+  html += '</table>';
+  html += '<p style="margin-top:10px;font-size:.85rem;color:#555">'
+        + 'ML-KEM a des clés plus grandes qu\'ECDH — c\'est le coût du post-quantique. '
+        + 'La sécurité contre l\'algorithme de Shor vaut ce surcoût.</p>';
+  document.getElementById('mlkem-table-container').innerHTML = html;
+}
+</script>
+</body>
+</html>
+""
